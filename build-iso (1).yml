@@ -1,0 +1,36 @@
+name: Build Aurora ISO
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    container:
+      image: debian:trixie
+      options: --privileged   # live-build needs chroot/mount access
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ISO
+        run: |
+          apt-get update
+          apt-get install -y ca-certificates debian-archive-keyring
+          bash build-aurora.sh
+
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurora-iso
+          path: aurora-build/*.iso
+          compression-level: 0
+          if-no-files-found: error
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: aurora-build/build.log
+          if-no-files-found: ignore
